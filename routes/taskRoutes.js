@@ -1,25 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middelware/auth')
-const { validate } = require('../middelware/validation')
-const taskSchema = require('../validations/taskValidation');
-const {
-  createTask,
-  updateTask,
-  deleteTask,
-  listTasks
-} = require('../controllers/taskController');
+const taskController = require('../controllers/taskController');
+const { authenticate } = require('../middleware/auth');
+const { validate } = require('../middleware/validation');
+const taskValidation = require('../validations/taskValidation');
 
-// 📌 Liste avec filtres et tri
-router.get('/', auth, listTasks);
-
-// 📌 Création
-router.post('/', auth, validate(taskSchema), createTask);
-
-// 📌 Modification
-router.put('/:id', auth, validate(taskSchema), updateTask);
-
-// 📌 Suppression
-router.delete('/:id', auth, deleteTask);
+router.post('/', authenticate, validate(taskValidation), taskController.createTask);
+router.get('/', authenticate, taskController.getTasks);
+router.put('/:id', authenticate, validate(taskValidation), taskController.updateTask);
+router.delete('/:id', authenticate, taskController.deleteTask);
 
 module.exports = router;
