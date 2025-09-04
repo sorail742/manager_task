@@ -4,13 +4,20 @@ const connectDB = require('./config/db');
 const { errorHandler } = require('./middleware/errorHandler');
 const cors = require('cors')
 const app = express();
+
+app.use(cors({
+  origin: ["http://localhost:5173", "https://ton-frontend.netlify.app"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+}));
+
 app.use(express.json());
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/tasks', require('./routes/taskRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
-app.use(cors({}));
+
 
 // Middleware d'erreurs - toujours à la fin
 app.use(errorHandler);

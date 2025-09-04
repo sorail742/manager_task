@@ -8,7 +8,8 @@ const userValidation = require('../validations/userValidation');
 
 // 🔹 Inscription publique
 router.post('/register', validate(userValidation), userController.register);
-
+//login
+router.post('/login', validate(userValidation), userController.login)
 // 🔹 Admin : créer un nouvel admin
 router.post('/admin', authenticate, authorizeAdmin, validate(userValidation), userController.addAdmin);
 

@@ -1,44 +1,45 @@
 const jwt = require("jsonwebtoken");
 
 // 📌 Inscription publique
+// register.js
 exports.register = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+  const { name, email, password } = req.body;
 
-    if (await User.findOne({ email })) {
-      return res.status(409).json({ message: "Email déjà utilisé" });
-    }
-
-    const user = new User({
-      name,
-      email,
-      password,
-      role: "member",
-    });
-
-    await user.save();
-
-    // Générer le token JWT
-    const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    res.status(201).json({
-      message: "Inscription réussie",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-      token,
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  if (await User.findOne({ email })) {
+    return res.status(409).json({ message: "Email déjà utilisé" });
   }
+
+  const user = new User({ name, email, password, role: "member" });
+  await user.save();
+
+  res.status(201).json({
+    message: "Inscription réussie, veuillez vous connecter",
+    user: { id: user._id, name: user.name, email: user.email, role: user.role }
+  });
 };
+
+// login.js
+exports.login = async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user || !(await user.comparePassword(password))) {
+    return res.status(401).json({ message: "Email ou mot de passe incorrect" });
+  }
+
+  const token = jwt.sign(
+    { id: user._id, email: user.email, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "1d" }
+  );
+
+  res.json({
+    message: "Connexion réussie",
+    user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    token,
+  });
+};
+
 // 📌 Ajouter un admin (admin seulement)
 exports.addAdmin = async (req, res) => {
   try {
