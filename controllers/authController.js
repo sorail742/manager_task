@@ -1,7 +1,7 @@
 // controllers/authController.js
 require('dotenv').config()
 const jwt = require('jsonwebtoken')
-const Joi = require('../validations/userValidation')
+const { registerSchema, loginSchema } = require('../validations/userValidation')
 const User = require('../models/User')
 
 // 📌 Inscription publique
@@ -41,7 +41,6 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Email ou mot de passe incorrect' })
     }
 
-    // Générer le token JWT uniquement lors du login
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
@@ -57,6 +56,7 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: err.message })
   }
 }
+
 
 // 📌 Ajouter un admin (admin seulement)
 exports.addAdmin = async (req, res) => {
