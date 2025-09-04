@@ -61,12 +61,18 @@ exports.login = async (req, res) => {
 // 📌 Ajouter un admin (admin seulement)
 exports.addAdmin = async (req, res) => {
   try {
+    // Validation des champs
+    const { error } = registerSchema.validate(req.body)
+    if (error) return res.status(400).json({ message: error.details[0].message })
+
     const { name, email, password } = req.body
 
+    // Vérifier si l'email existe déjà
     if (await User.findOne({ email })) {
       return res.status(409).json({ message: 'Email déjà utilisé' })
     }
 
+    // Créer l'admin
     const admin = new User({ name, email, password, role: 'admin' })
     await admin.save()
 
@@ -107,17 +113,28 @@ exports.getMyProfile = async (req, res) => {
   }
 }
 
-// 📌 Ajouter un membre lié à l'utilisateur
+// 📌 Ajouter un membre lié à l'utilisateur connecté
 exports.addMember = async (req, res) => {
   try {
+    // Validation des champs
+    const { error } = registerSchema.validate(req.body)
+    if (error) return res.status(400).json({ message: error.details[0].message })
+
     const { name, email, password } = req.body
 
+    // Vérifier si l'email existe déjà
     if (await User.findOne({ email })) {
       return res.status(409).json({ message: 'Email déjà utilisé' })
     }
 
+    // Créer le membre
     const member = new User({ name, email, password, role: 'member' })
     await member.save()
+
+    // Lier le membre au créateur
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Utilisateur non authentifié' })
+    }
 
     await User.findByIdAndUpdate(req.user.id, { $push: { members: member._id } })
 
