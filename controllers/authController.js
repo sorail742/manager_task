@@ -1,7 +1,7 @@
 // controllers/authController.js
 require('dotenv').config()
 const jwt = require('jsonwebtoken')
-const { registerSchema, loginSchema } = require('../validations/userValidation')
+const { registerSchema, loginSchema, registerUserSchema } = require('../validations/userValidation')
 const User = require('../models/User')
 
 // 📌 Inscription publique
@@ -59,28 +59,38 @@ exports.login = async (req, res) => {
 
 
 // 📌 Ajouter un admin (admin seulement)
-exports.addAdmin = async (req, res) => {
+// controllers/authController.js
+exports.addMemberOrAdmin = async (req, res) => {
   try {
-    // Validation des champs
-    const { error } = registerSchema.validate(req.body)
-    if (error) return res.status(400).json({ message: error.details[0].message })
+    const { error } = registerUserSchema.validate(req.body);
+    if (error) return res.status(400).json({ message: error.details[0].message });
 
-    const { name, email, password } = req.body
+    const { name, email, password, role } = req.body;
 
-    // Vérifier si l'email existe déjà
-    if (await User.findOne({ email })) {
-      return res.status(409).json({ message: 'Email déjà utilisé' })
+    if (await User.findOne({ email })) return res.status(409).json({ message: 'Email déjà utilisé' });
+
+    // Si c'est pour créer un admin, vérifier que c'est un admin qui fait la requête
+    if (role === 'admin' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Seul un admin peut créer un admin" });
     }
 
-    // Créer l'admin
-    const admin = new User({ name, email, password, role: 'admin' })
-    await admin.save()
+    // Par défaut, si pas de role ou rôle invalide pour un membre, mettre 'member'
+    const userRole = role === 'admin' ? 'admin' : 'member';
 
-    res.status(201).json({ message: 'Admin ajouté avec succès', admin })
+    const newUser = new User({ name, email, password, role: userRole });
+    await newUser.save();
+
+    // Lier le membre au créateur uniquement si c'est un membre
+    if (userRole === 'member') {
+      await User.findByIdAndUpdate(req.user.id, { $push: { members: newUser._id } });
+    }
+
+    res.status(201).json({ message: 'Utilisateur ajouté avec succès', newUser });
   } catch (err) {
-    res.status(500).json({ message: err.message })
+    res.status(500).json({ message: err.message });
   }
-}
+};
+
 
 // 📌 Voir tous les utilisateurs (admin)
 exports.getAllUsers = async (req, res) => {
@@ -113,33 +123,4 @@ exports.getMyProfile = async (req, res) => {
   }
 }
 
-// 📌 Ajouter un membre lié à l'utilisateur connecté
-exports.addMember = async (req, res) => {
-  try {
-    // Validation des champs
-    const { error } = registerSchema.validate(req.body)
-    if (error) return res.status(400).json({ message: error.details[0].message })
 
-    const { name, email, password } = req.body
-
-    // Vérifier si l'email existe déjà
-    if (await User.findOne({ email })) {
-      return res.status(409).json({ message: 'Email déjà utilisé' })
-    }
-
-    // Créer le membre
-    const member = new User({ name, email, password, role: 'member' })
-    await member.save()
-
-    // Lier le membre au créateur
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: 'Utilisateur non authentifié' })
-    }
-
-    await User.findByIdAndUpdate(req.user.id, { $push: { members: member._id } })
-
-    res.status(201).json({ message: 'Membre ajouté avec succès', member })
-  } catch (err) {
-    res.status(500).json({ message: err.message })
-  }
-}

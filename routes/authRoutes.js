@@ -4,7 +4,7 @@ const router = express.Router()
 const authController = require('../controllers/authController')
 const { authenticate, authorizeAdmin } = require('../middleware/auth')
 const { validate } = require('../middleware/validation')
-const { registerSchema, loginSchema } = require('../validations/userValidation')
+const { registerSchema, loginSchema, registerUserSchema} = require('../validations/userValidation')
 
 // 🔹 Inscription publique
 router.post('/register', validate(registerSchema), authController.register)
@@ -13,7 +13,7 @@ router.post('/register', validate(registerSchema), authController.register)
 router.post('/login', validate(loginSchema), authController.login)
 
 // 🔹 Admin : créer un nouvel admin
-router.post('/admin', authenticate, authorizeAdmin, validate(registerSchema), authController.addAdmin)
+router.post('/admin', authenticate, authorizeAdmin, validate(registerUserSchema), authController.addMemberOrAdmin)
 
 // 🔹 Admin : voir tous les utilisateurs
 router.get('/', authenticate, authorizeAdmin, authController.getAllUsers)
@@ -25,6 +25,6 @@ router.delete('/:id', authenticate, authorizeAdmin, authController.deleteUser)
 router.get('/me', authenticate, authController.getMyProfile)
 
 // 🔹 Membre ou Admin : ajouter un membre
-router.post('/members', authenticate, validate(registerSchema), authController.addMember)
+router.post('/members', authenticate, validate(registerUserSchema), authController.addMemberOrAdmin)
 
 module.exports = router
