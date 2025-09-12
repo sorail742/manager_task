@@ -6,10 +6,9 @@ const cors = require('cors')
 const app = express();
 
 app.use(cors({
-  origin: 'https://task-manager-frontend-d23r.onrender.com',
+  origin: 'https://task-manager-frontend-gray-delta.vercel.app/',
   credentials: true
 }));
-
 
 app.use(express.json());
 
